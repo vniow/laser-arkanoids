@@ -1,0 +1,17 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "../laser-server-demo"
+    },
+    {
+      "path": "../laser-dac"
+    },
+    {
+      "path": "../laser-breakout"
+    }
+  ],
+  "settings": {}
+}

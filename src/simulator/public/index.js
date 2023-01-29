@@ -9,7 +9,7 @@ class SimulatorOptions {
     this.numberOfPoints = '';
     this.totalPoints = '';
     this.showBlanking = false;
-    this.showDots = false;
+    this.showDots = true;
     this.forceTotalRender = true;
   }
 }
@@ -31,28 +31,52 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let lastRenderTime;
 
-// add an event listener to the canvas that listens for a "click" event
-canvas.addEventListener('click', function (event) {
+// add an event listener to the canvas that listens for a keydown event
+
+document.addEventListener('keydown', function (event) {
+  const key = event.key;
   try {
-    const x = event.clientX;
-    const y = event.clientY;
-    const data = { type: 'CLICK', data: { x, y } };
+    let data;
+    switch (key) {
+      case 'ArrowLeft':
+        data = { type: 'KEYDOWN', data: 'ArrowLeft' };
+        break;
+      case 'ArrowRight':
+        data = { type: 'KEYDOWN', data: 'ArrowRight' };
+        break;
+      case ' ':
+        data = { type: 'KEYDOWN', data: 'Space' };
+        break;
+      default:
+        if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
+          data = { type: 'KEYDOWN', data: key };
+        } else {
+          console.error(`Error: only letters are allowed. Got: ${key}`);
+          return;
+        }
+    }
     ws.send(JSON.stringify(data));
-    console.log('Sent message:', data);
   } catch (err) {
     console.error('Error sending message:', err);
   }
 });
 
-document.addEventListener('keydown', function (event) {
-  if (event.code === 'Space') {
-    try {
-      const data = { type: 'SPACEBAR' };
-      ws.send(JSON.stringify(data));
-      console.log('Sent message:', data);
-    } catch (err) {
-      console.error('Error sending message:', err);
+document.addEventListener('keyup', function (event) {
+  try {
+    let data;
+    switch (event.key) {
+      case 'ArrowLeft':
+        data = { type: 'KEYRELEASE', data: 'ArrowLeft' };
+        break;
+      case 'ArrowRight':
+        data = { type: 'KEYRELEASE', data: 'ArrowRight' };
+        break;
+      default:
+        return;
     }
+    ws.send(JSON.stringify(data));
+  } catch (err) {
+    console.error('error sending message:', err);
   }
 });
 
@@ -148,7 +172,7 @@ const ws = new WebsocketClient();
 ws.open('ws://' + host + ':8080');
 
 // Set a function to be called when a message is received from the server
-ws.onmessage = function (event) {
+ws.onmessage = function (ev) {
   // Parse the message payload as JSON
   const payload = JSON.parse(event.data);
   // If the message type is "POINTS"

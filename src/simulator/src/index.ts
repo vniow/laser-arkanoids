@@ -4,7 +4,7 @@ import { throttle } from './helpers';
 import express from 'express';
 import * as path from 'path';
 import * as http from 'http';
-// import the Node events module that will send data to the server
+// import the Node events module that will send data from the client to the server
 import { EventEmitter } from 'events';
 
 // When there is no real device, we fake an interval.
@@ -36,12 +36,12 @@ export class Simulator extends Device {
         // listen for the 'message' event from the server connection
         ws.on('message', (message: Buffer) => {
           const data = JSON.parse(message.toString());
-          if (data.type === 'CLICK') {
-            // emit the click event to the server
-            this.events.emit('click', data.data);
-          } else if (data.type === 'SPACEBAR') {
-            // emit the spacebar event to the server
-            this.events.emit('spacebar', data.data);
+          if (data.type === 'KEYDOWN') {
+            // emit the keypress event to the server
+            this.events.emit('KEYDOWN', data.data);
+          } else if (data.type === 'KEYRELEASE') {
+            // emit the keyrelease event to the server
+            this.events.emit('KEYRELEASE', data.data);
           }
         });
       });

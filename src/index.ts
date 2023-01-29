@@ -1,75 +1,103 @@
 import { DAC } from '@laser-dac/core';
 import { Simulator } from './simulator/src';
-import { Scene } from '@laser-dac/draw';
+import { Scene, loadHersheyFont, HersheyFont, Line } from './laser-dac';
 import { Bounds } from './Bounds';
 import { Ball } from './Ball';
+import { Block } from './Block';
+import { Color } from './laser-dac/Point';
+import { BasicColors } from './constants';
+import { Paddle } from './Paddle';
+import { gsap } from 'gsap';
+import * as path from 'path';
+import fs from 'fs';
 
-// set the radius of the ball
-const radius = 0.03;
-// initialise the width and height of the bounds
-let bWidth = Math.max(Math.random(), radius * 2);
-let bHeight = Math.max(Math.random(), radius * 2);
+const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
 
 // bring in that simulator
 (async () => {
   const dac = new DAC();
   const simulator = new Simulator();
   dac.use(simulator);
-  // listen for the click event from the simulator
-  simulator.events.on('click', (data) => {
-    // change the ball color
-    ball.color = [Math.random(), Math.random(), Math.random()];
-    console.log('ball color changed to: ', ball.color);
-  });
-  // listen for the spacebar event from the simulator
-  simulator.events.on('spacebar', (data) => {
-    console.log('starting bounds transformation');
-    // set the new bounds parameters
-    let newWidth = Math.max(Math.random(), radius * 2.5);
-    let newHeight = Math.max(Math.random(), radius * 2.5);
-    let newX = 0.5 - newWidth / 2;
-    let newY = 0.5 - newHeight / 2;
-    // calculate the differences between the current and new bounds
-    let widthDiff = newWidth - bounds.width;
-    let heightDiff = newHeight - bounds.height;
-    let xDiff = newX - bounds.x;
-    let yDiff = newY - bounds.y;
-    // set the step size and the number of steps
-    let step = 0.01;
-    let steps = 1 / step;
-    let widthStep = widthDiff / steps;
-    let heightStep = heightDiff / steps;
-    let xStep = xDiff / steps;
-    let yStep = yDiff / steps;
-    // update the bounds every 10ms until the new parameters are reached
-    let interval = setInterval(() => {
-      bounds.width += widthStep;
-      bounds.height += heightStep;
-      bounds.x += xStep;
-      bounds.y += yStep;
-      steps--;
-      if (steps <= 0) {
-        clearInterval(interval);
-        bounds.color = [Math.random(), Math.random(), Math.random()];
-        console.log('bounds color changed to: ', bounds.color);
-      }
-    }, 10);
-  });
+
   // start the DAC
   await dac.start();
   // initialise the scene
   const scene = new Scene({
-    resolution: 500,
+    resolution: 250,
   });
-  // initialise the bounds at random positions
+
+  function renderIntro() {
+    const introText = new HersheyFont({
+      x: 0.1,
+      y: 0.5,
+      font,
+      charWidth: 0.02,
+      text: 'press space',
+      color: [1, 1, 1],
+    });
+    scene.add(introText);
+
+    simulator.events.on('KEYDOWN', (key: string) => {
+      if (key === 'Space') {
+        spaceDown = true;
+        console.log('space');
+        scene.stop();
+        renderGame();
+        scene.start(renderGame);
+        fs.rm('scores.json', (err) => {
+          if (err) {
+            console.log(err);
+          }
+        });
+      }
+    });
+    let spaceDown = false;
+  }
+  scene.start(renderIntro);
+
+  // draw the bounds
   const bounds = new Bounds({
-    // the bWidth and bHeight variables ensure the bounds are always centered
-    x: 0.5 - bWidth / 2,
-    y: 0.5 - bHeight / 2,
-    width: bWidth,
-    height: bHeight,
-    color: [1, 1, 1],
+    x: 0.1,
+    y: 0.1,
+    width: 0.8,
+    height: 0.7,
+    color: [Math.random(), 0, 1],
   });
+
+  // draw the blocks
+  // set the colour of the blocks based on the value
+  function getColorForValue(value: number): Color {
+    switch (value) {
+      case 5:
+        return BasicColors.RED;
+      case 4:
+        return BasicColors.CYAN;
+      case 3:
+        return BasicColors.GREEN;
+      case 2:
+        return BasicColors.YELLOW;
+      case 1:
+        return BasicColors.MAGENTA;
+      case 0:
+        return BasicColors.BLACK;
+      default:
+        return BasicColors.BLACK;
+    }
+  }
+  // make the grid, each number is associated with a different colour & value
+  const grid = [
+    [5, 4, 3, 2, 1],
+    [5, 4, 3, 2, 1],
+    [5, 4, 3, 2, 1],
+    [5, 4, 3, 2, 1],
+  ];
+  const gap = 0.02;
+  const blockWidth = 0.1;
+  const blockHeight = 0.05;
+  const radius = blockHeight / 2;
+
+  const blocks = Block.createBlocks(grid, gap, blockWidth, blockHeight, bounds);
+
   // initialise the ball at random positions
   const ball = new Ball({
     radius: radius,
@@ -78,21 +106,158 @@ let bHeight = Math.max(Math.random(), radius * 2);
       Math.random() * (bounds.x + (bounds.width - radius) / 2 - bounds.x) +
       bounds.x +
       radius,
-    y:
-      Math.random() * (bounds.y + (bounds.height - radius) / 2 - bounds.y) +
-      bounds.y +
-      radius,
+    y: bounds.y + (blockHeight + gap) * grid.length + gap * 3,
     color: [1, 1, 1],
   });
+
+  const paddle = new Paddle({
+    x:
+      Math.random() * (bounds.x + (bounds.width - radius) / 2 - bounds.x) +
+      bounds.x +
+      radius,
+    y: bounds.y + bounds.height - gap * 2,
+    width: 0.2,
+    height: radius,
+    color: [1, 1, 1],
+  });
+
+  let leftArrowDown = false;
+  let rightArrowDown = false;
+
+  simulator.events.on('KEYDOWN', (key: string) => {
+    if (key === 'ArrowLeft') {
+      leftArrowDown = true;
+      animateLeft();
+    }
+    if (key === 'ArrowRight') {
+      rightArrowDown = true;
+      animateRight();
+    }
+  });
+
+  simulator.events.on('KEYRELEASE', (key: string) => {
+    if (key === 'ArrowLeft') {
+      leftArrowDown = false;
+    }
+    if (key === 'ArrowRight') {
+      rightArrowDown = false;
+    }
+  });
+
+  function animateLeft() {
+    if (leftArrowDown) {
+      const newX = paddle.x - 0.01;
+      if (
+        newX >= bounds.x + gap &&
+        newX + paddle.width <= bounds.x + bounds.width
+      ) {
+        gsap.to(paddle, {
+          x: paddle.x - 0.01,
+          duration: 0.02,
+          onComplete: animateLeft,
+        });
+      }
+    }
+  }
+
+  function animateRight() {
+    if (rightArrowDown) {
+      const newX = paddle.x + 0.01;
+      if (
+        newX >= bounds.x &&
+        newX + gap + paddle.width <= bounds.x + bounds.width
+      ) {
+        gsap.to(paddle, {
+          x: paddle.x + 0.01,
+          duration: 0.02,
+          onComplete: animateRight,
+        });
+      }
+    }
+  }
+  // set up the scoring
+  let score: number = 0;
+  let index: number = 0;
+  const scoreDisplay = new HersheyFont({
+    x: 0.1,
+    y: 0.9,
+    font,
+    charWidth: 0.02,
+    text: 'score: ' + score,
+    color: [1, 1, 1],
+  });
+
   // actually add the objects and render the scene
-  function renderFrame() {
+  function renderGame() {
+    scene.add(scoreDisplay);
+    scene.add(paddle);
     scene.add(bounds);
     scene.add(ball);
     ball.updatePosition();
-    ball.checkCollision(bounds);
+    // ball.boundsCollision(bounds);
+    ball.checkCollision(paddle, bounds, blocks);
+    // add the blocks to the scene
+
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      scene.add(block);
+      if (
+        ball.x + ball.radius > block.x &&
+        ball.x - ball.radius < block.x + block.width &&
+        ball.y + ball.radius > block.y &&
+        ball.y - ball.radius < block.y + block.height
+      ) {
+        if (block.value > 0) {
+          block.value--;
+          block.color = getColorForValue(block.value);
+          if (block.value === 0) {
+            score += 10;
+            scoreDisplay.text = 'score: ' + score;
+            blocks.splice(i, 1);
+            i--; // decrement the counter to account for the removed element
+          }
+        }
+      }
+      if (ball.y + ball.radius > bounds.y + bounds.height) {
+        scene.stop();
+        renderGameOver();
+        scene.start(renderGameOver);
+        index++;
+        logScore(score, index);
+        return;
+      }
+    }
+
+    function logScore(score: number, index: number) {
+      let scores = [];
+
+      try {
+        scores = JSON.parse(fs.readFileSync('scores.json').toString());
+      } catch (err) {
+        console.error(err);
+      }
+
+      scores.push({ index, score });
+
+      try {
+        fs.writeFileSync('./scores.json', JSON.stringify(scores, null, 2));
+      } catch (err) {
+        console.error(err);
+      }
+    }
   }
-  // have the scene start the renderFrame function
-  scene.start(renderFrame);
+  function renderGameOver() {
+    const gameOverText = new HersheyFont({
+      x: 0.1,
+      y: 0.5,
+      font,
+      charWidth: 0.02,
+      text: 'game over ',
+      color: [1, 1, 1],
+    });
+    scene.add(gameOverText);
+  }
+
   // start streaming the scene to the DAC
   dac.stream(scene);
 })();
