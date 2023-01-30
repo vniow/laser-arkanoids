@@ -10,6 +10,7 @@ interface PaddleOptions {
   width: number;
   height: number;
   color: Color;
+  speed: number;
 }
 
 export class Paddle extends Shape {
@@ -18,7 +19,7 @@ export class Paddle extends Shape {
   width: number;
   height: number;
   color: Color;
-  speed: number = 0;
+  speed: number;
 
   constructor(options: PaddleOptions) {
     super();
@@ -27,25 +28,16 @@ export class Paddle extends Shape {
     this.width = options.width;
     this.height = options.height;
     this.color = options.color;
+    this.speed = options.speed;
   }
 
-  move(direction: 'left' | 'right' | 'stop') {
-    if (direction === 'left') {
-      this.speed = -0.01;
-    }
-    if (direction === 'right') {
-      this.speed = 0.01;
-    }
-    if (direction === 'stop') {
-      this.speed = 0;
-    }
-  }
+  static paddle: Paddle | null = null;
 
-  update(bounds: Bounds) {
-    this.x += this.speed;
-    if (this.x + this.width > bounds.x + bounds.width || this.x < bounds.x) {
-      this.speed = 0;
+  static createPaddle(options: PaddleOptions): Paddle {
+    if (!this.paddle) {
+      this.paddle = new Paddle(options);
     }
+    return this.paddle;
   }
 
   draw(resolution: number) {

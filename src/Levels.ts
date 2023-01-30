@@ -1,39 +1,83 @@
 import { Ball } from './Ball';
 import { Bounds } from './Bounds';
 import { Scene } from './laser-dac';
+import { Paddle } from './Paddle';
+import { Block } from './Block';
+import { BasicColors } from './constants';
+import { RESOLUTION } from './laser-dac/constants';
+
+interface LevelOptions {
+  grid: number[][];
+  boundsColour: [number, number, number];
+}
 
 export class Level {
   grid: number[][];
+  boundsColour: [number, number, number];
+  ball: Ball;
+  paddle: Paddle;
+  blocks: Block[] = [];
+  bounds: Bounds;
 
-  constructor(grid: number[][]) {
-    this.grid = grid;
+  blockHeight: number;
+  blockWidth: number;
+  gap: number;
+  radius: number;
 
-    this.drawBounds();
-    this.drawBall();
-  }
+  constructor(options: LevelOptions) {
+    this.grid = options.grid;
+    this.boundsColour = options.boundsColour;
 
-  drawBounds() {
-    // draw the bounds
-    const bounds = new Bounds({
+    this.blockHeight = 0.05;
+    this.blockWidth = 0.1;
+    this.gap = 0.02;
+    this.radius = this.blockHeight / 2;
+
+    this.bounds = Bounds.createBounds({
       x: 0.1,
       y: 0.1,
       width: 0.8,
       height: 0.7,
-      color: [Math.random(), 0, 1],
+      color: this.boundsColour,
     });
-    return bounds;
-  }
-  drawBall() {
-    const ball = new Ball({
-      radius: 0.05,
-      x: 0.5,
-      y: 0.5,
+
+    this.ball = new Ball({
+      radius: this.radius,
+      // keep it within the bounds
+      x:
+        Math.random() *
+          (this.bounds.x +
+            (this.bounds.width - this.radius) / 2 -
+            this.bounds.x) +
+        this.bounds.x +
+        this.radius,
+      y:
+        this.bounds.y +
+        (this.blockHeight + this.gap) * this.grid.length +
+        this.gap * 3,
       color: [1, 1, 1],
     });
-    return ball;
+
+    this.paddle = Paddle.createPaddle({
+      x: this.bounds.x + this.bounds.width / 2,
+      y: this.bounds.y + this.bounds.height - this.radius,
+      width: 0.1,
+      height: 0.02,
+      color: [1, 1, 1],
+      speed: 0.01,
+    });
+
+    this.blocks = Block.createBlocks(
+      this.grid,
+      this.gap,
+      this.blockWidth,
+      this.blockHeight,
+      this.bounds
+    );
   }
-  addToScene(scene: Scene) {
-    scene.add(this.drawBall());
-    scene.add(this.drawBounds());
-  }
+
+  updateBall = () => {
+    this.ball.updatePosition();
+    this.ball.checkCollision(this.paddle, this.bounds, this.blocks);
+  };
 }

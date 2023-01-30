@@ -10,6 +10,7 @@ import { Paddle } from './Paddle';
 import { gsap } from 'gsap';
 import * as path from 'path';
 import fs from 'fs';
+import { Level } from './Levels';
 
 const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
 
@@ -37,21 +38,26 @@ const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
     });
     scene.add(introText);
 
+    // scene.add(level.bounds);
+    // scene.add(level.paddle);
+    // scene.add(level.ball);
+    // scene.add(level.bounds);
+    // level.blocks.forEach((block) => {
+    //   scene.add(block);
+    // });
+
     simulator.events.on('KEYDOWN', (key: string) => {
       if (key === 'Space') {
-        spaceDown = true;
-        console.log('space');
         scene.stop();
         renderGame();
         scene.start(renderGame);
-        fs.rm('scores.json', (err) => {
-          if (err) {
-            console.log(err);
-          }
-        });
+        // fs.rm('scores.json', (err) => {
+        //   if (err) {
+        //     console.log(err);
+        //   }
+        // });
       }
     });
-    let spaceDown = false;
   }
   scene.start(renderIntro);
 
@@ -84,6 +90,17 @@ const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
         return BasicColors.BLACK;
     }
   }
+
+  const level = new Level({
+    grid: [
+      [5, 4, 3, 2, 1],
+      [5, 4, 3, 2, 1],
+      [5, 4, 3, 2, 1],
+      [5, 4, 3, 2, 1],
+    ],
+    boundsColour: [Math.random(), 0, 1],
+  });
+
   // make the grid, each number is associated with a different colour & value
   const grid = [
     [5, 4, 3, 2, 1],
@@ -119,6 +136,7 @@ const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
     width: 0.2,
     height: radius,
     color: [1, 1, 1],
+    speed: 0.01,
   });
 
   let leftArrowDown = false;
@@ -189,9 +207,10 @@ const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
 
   // actually add the objects and render the scene
   function renderGame() {
+    scene.add(level.bounds);
     scene.add(scoreDisplay);
     scene.add(paddle);
-    scene.add(bounds);
+    // scene.add(bounds);
     scene.add(ball);
     ball.updatePosition();
     // ball.boundsCollision(bounds);
@@ -223,7 +242,7 @@ const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
         renderGameOver();
         scene.start(renderGameOver);
         index++;
-        logScore(score, index);
+        // logScore(score, index);
         return;
       }
     }

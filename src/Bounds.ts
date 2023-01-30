@@ -3,6 +3,7 @@ import { Shape } from '@laser-dac/draw/dist/Shape';
 import { Color } from '@laser-dac/draw/dist/Point';
 
 // this more or less recreates the Rect class from @laser-dac/draw
+// minus the bottom line
 
 interface BoundsOptions {
   x: number;
@@ -26,6 +27,15 @@ export class Bounds extends Shape {
     this.width = options.width;
     this.height = options.height;
     this.color = options.color;
+  }
+
+  static bounds: Bounds | null = null;
+
+  static createBounds(options: BoundsOptions): Bounds {
+    if (!this.bounds) {
+      this.bounds = new Bounds(options);
+    }
+    return this.bounds;
   }
 
   draw(resolution: number) {

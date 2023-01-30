@@ -2,6 +2,14 @@ import { Rect } from '@laser-dac/draw';
 import { BasicColors } from './constants';
 import { Bounds } from './Bounds';
 
+const grid = [
+  [5, 4, 3, 2, 1],
+  [5, 4, 3, 2, 1],
+  [5, 4, 3, 2, 1],
+  [5, 4, 3, 2, 1],
+  [5, 4, 3, 2, 1],
+];
+
 export class Block extends Rect {
   value: number = 0;
   static createBlocks(

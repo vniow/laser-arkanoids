@@ -47,13 +47,13 @@ document.addEventListener('keydown', function (event) {
       case ' ':
         data = { type: 'KEYDOWN', data: 'Space' };
         break;
-      default:
-        if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
-          data = { type: 'KEYDOWN', data: key };
-        } else {
-          console.error(`Error: only letters are allowed. Got: ${key}`);
-          return;
-        }
+      // default:
+      //   if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
+      //     data = { type: 'KEYDOWN', data: key };
+      //   } else {
+      //     console.error(`Error: only letters are allowed. Got: ${key}`);
+      //     return;
+      //   }
     }
     ws.send(JSON.stringify(data));
   } catch (err) {
