@@ -5,6 +5,7 @@ import { Paddle } from './Paddle';
 import { Block } from './Block';
 import { BasicColors } from './constants';
 import { RESOLUTION } from './laser-dac/constants';
+import { gsap } from 'gsap';
 
 interface LevelOptions {
   grid: number[][];
@@ -23,6 +24,7 @@ export class Level {
   blockWidth: number;
   gap: number;
   radius: number;
+  animation: gsap.core.Tween | undefined;
 
   constructor(options: LevelOptions) {
     this.grid = options.grid;
@@ -41,7 +43,7 @@ export class Level {
       color: this.boundsColour,
     });
 
-    this.ball = new Ball({
+    this.ball = Ball.createBall({
       radius: this.radius,
       // keep it within the bounds
       x:
@@ -55,15 +57,21 @@ export class Level {
         this.bounds.y +
         (this.blockHeight + this.gap) * this.grid.length +
         this.gap * 3,
-      color: [1, 1, 1],
+      color: [1, 0, 1],
     });
 
     this.paddle = Paddle.createPaddle({
-      x: this.bounds.x + this.bounds.width / 2,
+      x:
+        Math.random() *
+          (this.bounds.x +
+            (this.bounds.width - this.radius) / 2 -
+            this.bounds.x) +
+        this.bounds.x +
+        this.radius,
       y: this.bounds.y + this.bounds.height - this.radius,
-      width: 0.1,
+      width: 0.075,
       height: 0.02,
-      color: [1, 1, 1],
+      color: [1, 1, 0],
       speed: 0.01,
     });
 
@@ -80,4 +88,33 @@ export class Level {
     this.ball.updatePosition();
     this.ball.checkCollision(this.paddle, this.bounds, this.blocks);
   };
+  moveLeft() {
+    const newX = this.paddle.x - 0.01;
+    if (
+      newX >= this.bounds.x + this.gap &&
+      newX + this.paddle.width <= this.bounds.x + this.bounds.width
+    ) {
+      this.animation = gsap.to(this.paddle, {
+        x: this.paddle.x - 0.01,
+        duration: 0.02,
+        onComplete: this.moveLeft.bind(this),
+      });
+    }
+  }
+  moveRight() {
+    const newX = this.paddle.x + 0.01;
+    if (
+      newX >= this.bounds.x &&
+      newX + this.gap + this.paddle.width <= this.bounds.x + this.bounds.width
+    ) {
+      this.animation = gsap.to(this.paddle, {
+        x: this.paddle.x + 0.01,
+        duration: 0.02,
+        onComplete: this.moveRight.bind(this),
+      });
+    }
+  }
+  stop() {
+    gsap.killTweensOf(this.paddle);
+  }
 }
