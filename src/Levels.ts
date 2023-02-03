@@ -1,11 +1,11 @@
 import { Ball } from './Ball';
 import { Bounds } from './Bounds';
-import { Scene } from './laser-dac';
 import { Paddle } from './Paddle';
 import { Block } from './Block';
-import { BasicColors } from './constants';
-import { RESOLUTION } from './laser-dac/constants';
 import { gsap } from 'gsap';
+import { Collisions } from './Collisions';
+
+let isGameOver = false;
 
 interface LevelOptions {
   grid: number[][];
@@ -26,6 +26,8 @@ export class Level {
   radius: number;
   animation: gsap.core.Tween | undefined;
 
+  selected: boolean;
+
   constructor(options: LevelOptions) {
     this.grid = options.grid;
     this.boundsColour = options.boundsColour;
@@ -34,6 +36,8 @@ export class Level {
     this.blockWidth = 0.1;
     this.gap = 0.02;
     this.radius = this.blockHeight / 2;
+
+    this.selected = true;
 
     this.bounds = Bounds.createBounds({
       x: 0.1,
@@ -57,7 +61,7 @@ export class Level {
         this.bounds.y +
         (this.blockHeight + this.gap) * this.grid.length +
         this.gap * 3,
-      color: [1, 0, 1],
+      color: [1, 1, 1],
     });
 
     this.paddle = Paddle.createPaddle({
@@ -69,9 +73,9 @@ export class Level {
         this.bounds.x +
         this.radius,
       y: this.bounds.y + this.bounds.height - this.radius,
-      width: 0.075,
+      width: 0.2,
       height: 0.02,
-      color: [1, 1, 0],
+      color: [1, 1, 1],
       speed: 0.01,
     });
 
@@ -86,8 +90,29 @@ export class Level {
 
   updateBall = () => {
     this.ball.updatePosition();
-    this.ball.checkCollision(this.paddle, this.bounds, this.blocks);
   };
+
+  gameOver = () => {
+    if (isGameOver) {
+      return true;
+    }
+    if (this.ball.y > this.bounds.y + this.bounds.height + this.radius) {
+      isGameOver = true;
+      return true;
+    }
+    return false;
+  };
+
+  updateCollisions = () => {
+    Collisions.checkCollision(this.ball, this.paddle, this.bounds, this.blocks);
+  };
+
+  levelCompleted = () => {
+    if (this.blocks.length === 0) {
+      return true;
+    }
+  };
+
   moveLeft() {
     const newX = this.paddle.x - 0.01;
     if (

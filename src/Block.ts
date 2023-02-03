@@ -4,6 +4,25 @@ import { Bounds } from './Bounds';
 
 export class Block extends Rect {
   value: number = 0;
+  hit: boolean = false;
+
+  updateColor() {
+    this.color = Block.getColorForValue(this.value);
+  }
+
+  static colorMap = new Map([
+    [5, BasicColors.RED],
+    [4, BasicColors.CYAN],
+    [3, BasicColors.GREEN],
+    [2, BasicColors.YELLOW],
+    [1, BasicColors.MAGENTA],
+    [0, BasicColors.WHITE],
+  ]);
+
+  static getColorForValue(value: number) {
+    return this.colorMap.get(value) || BasicColors.WHITE;
+  }
+
   static createBlocks(
     grid: number[][],
     gap: number,
@@ -11,27 +30,15 @@ export class Block extends Rect {
     blockHeight: number,
     bounds: Bounds
   ): Block[] {
-    const getColorForValue = (value: number) => {
-      switch (value) {
-        case 5:
-          return BasicColors.RED;
-        case 4:
-          return BasicColors.CYAN;
-        case 3:
-          return BasicColors.GREEN;
-        case 2:
-          return BasicColors.YELLOW;
-        case 1:
-          return BasicColors.MAGENTA;
-        case 0:
-          return BasicColors.BLACK;
-        default:
-          return BasicColors.BLACK;
-      }
-    };
-
-    const blockX = bounds.width / 2 - (grid[0].length * (blockWidth + gap)) / 2;
+    // blockX keeps the array centred no matter how many you have
+    const blockX =
+      bounds.width / 2 -
+      (grid[0].length * (blockWidth + gap)) / 2 +
+      bounds.x +
+      gap / 2;
     const blocks: Block[] = [];
+    let y = 0.05 + bounds.y;
+    let x = blockX;
 
     for (let i = 0; i < grid.length; i++) {
       for (let j = 0; j < grid[i].length; j++) {
@@ -39,14 +46,17 @@ export class Block extends Rect {
           const block = new Block({
             width: blockWidth,
             height: blockHeight,
-            x: j * (blockWidth + gap) + blockX + gap / 2 + bounds.x,
-            y: i * (blockHeight + gap) + 0.05 + bounds.y,
-            color: getColorForValue(grid[i][j]),
+            x,
+            y,
+            color: this.getColorForValue(grid[i][j]),
           });
           block.value = grid[i][j];
           blocks.push(block);
         }
+        x += blockWidth + gap;
       }
+      x = blockX;
+      y += blockHeight + gap;
     }
     return blocks;
   }

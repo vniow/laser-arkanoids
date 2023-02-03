@@ -44,6 +44,12 @@ document.addEventListener('keydown', function (event) {
       case 'ArrowRight':
         data = { type: 'KEYDOWN', data: 'ArrowRight' };
         break;
+      case 'ArrowUp':
+        data = { type: 'KEYDOWN', data: 'ArrowUp' };
+        break;
+      case 'ArrowDown':
+        data = { type: 'KEYDOWN', data: 'ArrowDown' };
+        break;
       case ' ':
         data = { type: 'KEYDOWN', data: 'Space' };
         break;
@@ -70,6 +76,12 @@ document.addEventListener('keyup', function (event) {
         break;
       case 'ArrowRight':
         data = { type: 'KEYRELEASE', data: 'ArrowRight' };
+        break;
+      case 'ArrowUp':
+        data = { type: 'KEYRELEASE', data: 'ArrowUp' };
+        break;
+      case 'ArrowDown':
+        data = { type: 'KEYRELEASE', data: 'ArrowDown' };
         break;
       default:
         return;
