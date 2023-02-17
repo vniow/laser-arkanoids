@@ -14,13 +14,13 @@ import { Paddle } from './Paddle';
 // each object is a collection of points with an x, y, r, g, b value
 
 // define the bounds
-const BOUNDS_WIDTH = 0.8;
-const BOUNDS_HEIGHT = 0.7;
+const BOUNDS_WIDTH = 0.1;
+const BOUNDS_HEIGHT = 0.1;
 
 // define the blocks
-const BLOCK_WIDTH = 0.1;
+const BLOCK_WIDTH = BOUNDS_WIDTH / 10;
 const BLOCK_HEIGHT = BLOCK_WIDTH / 2;
-const BLOCK_GAP = 0.01;
+const BLOCK_GAP = BLOCK_WIDTH / 10;
 
 // define the ball
 const BALL_RADIUS = BLOCK_HEIGHT / 2;
@@ -30,11 +30,7 @@ const BALL_RADIUS = BLOCK_HEIGHT / 2;
 // the numbers represent the colours of the blocks
 // 0 draws a blank block
 
-const grid = [
-  [4, 3, 2, 1, 3, 1, 2],
-  [5, 1, 0, 2, 3],
-  [1, 1, 1, 1, 1, 1, 1],
-];
+const grid = [[4, 3, 2, 1, 3, 1, 2]];
 
 export class Level {
   objects: (Ball | Bounds | Paddle | Block)[] = [];
@@ -83,8 +79,8 @@ export class Level {
       }
       // reverse the y direction if the ball hits the paddle
       if (
-        ball.x + ball.radius >= paddle.x - 0.05 &&
-        ball.x - ball.radius <= paddle.x + paddle.width + 0.05 &&
+        ball.x + ball.radius >= paddle.x - BLOCK_GAP &&
+        ball.x - ball.radius <= paddle.x + paddle.width + BLOCK_GAP &&
         ball.y - ball.radius <= paddle.y + paddle.height &&
         ball.y + ball.radius >= paddle.y
       ) {
@@ -131,12 +127,12 @@ export class Level {
 
     for (let i = 0; i < grid.length; i++) {
       const totalLength =
-        grid[i].length * 0.1 + (grid[i].length - 1) * BLOCK_GAP;
+        grid[i].length * BLOCK_WIDTH + (grid[i].length - 1) * BLOCK_GAP;
       const startX = (1 - BOUNDS_WIDTH) / 2 + (BOUNDS_WIDTH - totalLength) / 2;
       const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP;
       for (let j = 0; j < grid[i].length; j++) {
         if (grid[i][j] > 0) {
-          const x = startX + j * (0.1 + BLOCK_GAP);
+          const x = startX + j * (BLOCK_WIDTH + BLOCK_GAP);
           const y = startY + i * (BLOCK_HEIGHT + BLOCK_GAP);
           const block = new Block({
             width: BLOCK_WIDTH,
@@ -171,10 +167,10 @@ export class Level {
 
     // draw the paddle
     const paddle = new Paddle({
-      x: 0.2,
-      y: bounds.y + BOUNDS_HEIGHT - BLOCK_GAP,
-      width: 0.6,
-      height: 0.02,
+      x: bounds.x + BLOCK_GAP * 2,
+      y: bounds.y + BOUNDS_HEIGHT - BLOCK_GAP * 10,
+      width: BLOCK_WIDTH * 8,
+      height: BLOCK_GAP * 2,
       color: [1, 1, 1],
       speed: 0.01,
     });
