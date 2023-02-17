@@ -1,9 +1,11 @@
 ## What is this
 
 I've been tecahing myself programming using the
-[laser-dac library](https://github.com/Volst/laser-dac) to create some simple games. This repo serves as the base for the interactivity portion using a modified version of the simulator package to work with mouse and keyboard inputs.
+[laser-dac library](https://github.com/Volst/laser-dac) and I decided it would be a great idea to make a game of Breakout.
 
 **Note:** I do not have a laser to test this. Do you? Let's get in touch.
+
+**Another Note:** This code is VERY MUCH not optimised. Honestly it's a miracle it works at all.
 
 # How to use
 
@@ -18,8 +20,6 @@ I've been tecahing myself programming using the
 
 You should be seeing something like this:
 
-![screenshot](screenie.png)
-
-To interact, press the spacebar to change the bounds dimensions and colour, and press the mouse to change the colour of the bouncing ball.
+![screenshot](laser-arkanoids.gif)
 
 Enjoy.

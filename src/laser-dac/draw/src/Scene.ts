@@ -1,5 +1,6 @@
 import { Point } from './Point';
 import { Shape } from './Shape';
+import { Color } from './Point';
 
 // Frames per second; 30fps will be enough for most use-cases.
 const DEFAULT_FPS = 30;
@@ -17,28 +18,49 @@ export class Scene {
   points: Point[] = [];
   resolution: number;
   interval?: NodeJS.Timer;
+  color?: Color;
 
   constructor(options?: SceneOptions) {
     this.resolution = (options && options.resolution) || DEFAULT_RESOLUTION;
   }
 
+  cachedPoints: { [key: string]: Point } = {};
+
   add(shape: Shape, transformer?: TransformFn) {
-    let points = shape.draw(this.resolution);
+    let newPoints = shape.draw(this.resolution);
     if (transformer) {
-      points = transformer(points);
+      newPoints = transformer(newPoints);
     }
-    this.points = this.points.concat(points);
+
+    const newCachedPoints: { [key: string]: Point } = {};
+
+    newPoints.forEach((point) => {
+      const key = JSON.stringify([point.x, point.y, point.r, point.g, point.b]);
+      const cachedPoint = this.cachedPoints[key];
+      if (cachedPoint) {
+        // The point has been previously drawn, copy the cached point to avoid unnecessary object creation
+        this.points.push(Object.assign(new Point(0, 0), cachedPoint));
+      } else {
+        // The point is new, add it to the points array and cache it
+        this.points.push(point);
+        newCachedPoints[key] = point;
+      }
+    });
+
+    // Update the cached points
+    this.cachedPoints = newCachedPoints;
   }
 
   reset() {
     this.points = [];
+    this.cachedPoints = {};
   }
 
-  start(renderFrame: () => void, fps: number = DEFAULT_FPS) {
+  start(requestAnimationFrame: () => void, fps: number = DEFAULT_FPS) {
     const ms = 1000 / fps;
     this.interval = setInterval(() => {
       this.reset();
-      renderFrame();
+      requestAnimationFrame();
     }, ms);
   }
 

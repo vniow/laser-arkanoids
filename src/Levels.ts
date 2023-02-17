@@ -1,145 +1,202 @@
+import { DAC } from './laser-dac/core/src';
+import { Simulator } from './laser-dac/simulator/src';
+import { Scene } from './laser-dac/draw/src';
+import { Block } from './Block';
 import { Ball } from './Ball';
 import { Bounds } from './Bounds';
 import { Paddle } from './Paddle';
-import { Block } from './Block';
-import { gsap } from 'gsap';
-import { Collisions } from './Collisions';
 
-let isGameOver = false;
+// about the laser-dac library:
+// you can access the simulator at http://localhost:8080
+// it draws within a square canvas
+// all values are in percentages
+// so any x and y values could be 0, 0.5, 0.000314, 1, etc.
+// each object is a collection of points with an x, y, r, g, b value
 
-interface LevelOptions {
-  grid: number[][];
-  boundsColour: [number, number, number];
-}
+// define the bounds
+const BOUNDS_WIDTH = 0.8;
+const BOUNDS_HEIGHT = 0.7;
+
+// define the blocks
+const BLOCK_WIDTH = 0.1;
+const BLOCK_HEIGHT = BLOCK_WIDTH / 2;
+const BLOCK_GAP = 0.01;
+
+// define the ball
+const BALL_RADIUS = BLOCK_HEIGHT / 2;
+
+// define the grid
+// you can fit 7 blocks across with the default parameters
+// the numbers represent the colours of the blocks
+// 0 draws a blank block
+
+const grid = [
+  [4, 3, 2, 1, 3, 1, 2],
+  [5, 1, 0, 2, 3],
+  [1, 1, 1, 1, 1, 1, 1],
+];
 
 export class Level {
+  objects: (Ball | Bounds | Paddle | Block)[] = [];
   grid: number[][];
-  boundsColour: [number, number, number];
-  ball: Ball;
-  paddle: Paddle;
   blocks: Block[] = [];
-  bounds: Bounds;
 
-  blockHeight: number;
-  blockWidth: number;
-  gap: number;
-  radius: number;
-  animation: gsap.core.Tween | undefined;
+  constructor() {
+    this.grid = grid;
+    this.start();
+  }
 
-  selected: boolean;
+  async start() {
+    const dac = new DAC();
+    dac.use(new Simulator());
+    // if (process.env.DEVICE) {
+    //   dac.use(new EtherDream());
+    // }
+    await dac.start();
 
-  constructor(options: LevelOptions) {
-    this.grid = options.grid;
-    this.boundsColour = options.boundsColour;
+    const scene = new Scene({ resolution: 500 });
 
-    this.blockHeight = 0.05;
-    this.blockWidth = 0.1;
-    this.gap = 0.02;
-    this.radius = this.blockHeight / 2;
-
-    this.selected = true;
-
-    this.bounds = Bounds.createBounds({
-      x: 0.1,
-      y: 0.1,
-      width: 0.8,
-      height: 0.7,
-      color: this.boundsColour,
+    const bounds = new Bounds({
+      x: (1 - BOUNDS_WIDTH) / 2,
+      y: (1 - BOUNDS_HEIGHT) / 2,
+      width: BOUNDS_WIDTH,
+      height: BOUNDS_HEIGHT,
+      color: [Math.random(), Math.random(), Math.random()],
     });
+    this.objects.push(bounds);
 
-    this.ball = Ball.createBall({
-      radius: this.radius,
-      // keep it within the bounds
+    const checkCollision = (
+      ball: Ball,
+      bounds: Bounds,
+      paddle: Paddle,
+      blocks: Block[]
+    ) => {
+      // check if the ball hits the bounds
+      if (
+        ball.x - ball.radius <= bounds.x ||
+        ball.x + ball.radius >= bounds.x + bounds.width
+      ) {
+        ball.vx *= -1;
+      }
+      if (ball.y - ball.radius <= bounds.y) {
+        ball.vy *= -1;
+      }
+      // reverse the y direction if the ball hits the paddle
+      if (
+        ball.x + ball.radius >= paddle.x - 0.05 &&
+        ball.x - ball.radius <= paddle.x + paddle.width + 0.05 &&
+        ball.y - ball.radius <= paddle.y + paddle.height &&
+        ball.y + ball.radius >= paddle.y
+      ) {
+        ball.vy *= -1;
+      }
+
+      // detect collision with blocks
+      for (let i = 0; i < blocks.length; i++) {
+        let block = blocks[i];
+        if (
+          ball.x + ball.radius >= block.x &&
+          ball.x - ball.radius <= block.x + block.width &&
+          ball.y + ball.radius >= block.y &&
+          ball.y - ball.radius <= block.y + block.height
+        ) {
+          if (
+            ball.x + ball.radius >= block.x + block.width ||
+            ball.x - ball.radius <= block.x
+          ) {
+            ball.vx *= -1;
+          }
+          if (
+            ball.y + ball.radius >= block.y + block.height ||
+            ball.y - ball.radius <= block.y
+          ) {
+            ball.vy *= -1;
+          }
+          // update block color
+
+          // remove block if value is zero
+
+          block.value--;
+          block.color = Block.getColorForValue(block.value);
+          // remove block if value is zero
+          if (block.value === 0) {
+            blocks.splice(i, 1);
+            this.objects.splice(this.objects.indexOf(block), 1); // remove from objects array as well
+
+            i--; // to account for the index change due to splice
+          }
+        }
+      }
+    };
+
+    for (let i = 0; i < grid.length; i++) {
+      const totalLength =
+        grid[i].length * 0.1 + (grid[i].length - 1) * BLOCK_GAP;
+      const startX = (1 - BOUNDS_WIDTH) / 2 + (BOUNDS_WIDTH - totalLength) / 2;
+      const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP;
+      for (let j = 0; j < grid[i].length; j++) {
+        if (grid[i][j] > 0) {
+          const x = startX + j * (0.1 + BLOCK_GAP);
+          const y = startY + i * (BLOCK_HEIGHT + BLOCK_GAP);
+          const block = new Block({
+            width: BLOCK_WIDTH,
+            height: BLOCK_HEIGHT,
+            x,
+            y,
+            value: grid[i][j],
+            color: Block.getColorForValue(grid[i][j]),
+          });
+
+          this.blocks.push(block);
+          this.objects.push(block);
+        }
+      }
+    }
+
+    // the ball will start a BLOCK_GAP distance from the bottom of the grid
+    const totalBlocksHeight =
+      grid.length * (BLOCK_HEIGHT + BLOCK_GAP) - BLOCK_GAP;
+    const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP + totalBlocksHeight;
+    // draw the ball
+    const ball = new Ball({
       x:
-        Math.random() *
-          (this.bounds.x +
-            (this.bounds.width - this.radius) / 2 -
-            this.bounds.x) +
-        this.bounds.x +
-        this.radius,
-      y:
-        this.bounds.y +
-        (this.blockHeight + this.gap) * this.grid.length +
-        this.gap * 3,
+        Math.random() * (bounds.x + (bounds.width - BLOCK_GAP) / 2 - bounds.x) +
+        bounds.x +
+        BLOCK_GAP,
+      y: startY + BALL_RADIUS + BLOCK_GAP,
+      radius: BALL_RADIUS,
       color: [1, 1, 1],
     });
+    this.objects.push(ball);
 
-    this.paddle = Paddle.createPaddle({
-      x:
-        Math.random() *
-          (this.bounds.x +
-            (this.bounds.width - this.radius) / 2 -
-            this.bounds.x) +
-        this.bounds.x +
-        this.radius,
-      y: this.bounds.y + this.bounds.height - this.radius,
-      width: 0.2,
+    // draw the paddle
+    const paddle = new Paddle({
+      x: 0.2,
+      y: bounds.y + BOUNDS_HEIGHT - BLOCK_GAP,
+      width: 0.6,
       height: 0.02,
       color: [1, 1, 1],
       speed: 0.01,
     });
+    this.objects.push(paddle);
 
-    this.blocks = Block.createBlocks(
-      this.grid,
-      this.gap,
-      this.blockWidth,
-      this.blockHeight,
-      this.bounds
-    );
-  }
-
-  updateBall = () => {
-    this.ball.updatePosition();
-  };
-
-  gameOver = () => {
-    if (isGameOver) {
-      return true;
+    const self = this;
+    function renderLevel(objects: (Ball | Bounds | Paddle | Block)[]) {
+      checkCollision(ball, bounds, paddle, self.blocks);
+      for (const object of objects) {
+        scene.add(object);
+        if (object instanceof Ball) {
+          object.moveBall();
+          // object.checkCollision(bounds, paddle);
+        }
+      }
     }
-    if (this.ball.y > this.bounds.y + this.bounds.height + this.radius) {
-      isGameOver = true;
-      return true;
-    }
-    return false;
-  };
 
-  updateCollisions = () => {
-    Collisions.checkCollision(this.ball, this.paddle, this.bounds, this.blocks);
-  };
+    scene.start(() => {
+      // scene.reset();
+      renderLevel(this.objects);
+    });
 
-  levelCompleted = () => {
-    if (this.blocks.length === 0) {
-      return true;
-    }
-  };
-
-  moveLeft() {
-    const newX = this.paddle.x - 0.01;
-    if (
-      newX >= this.bounds.x + this.gap &&
-      newX + this.paddle.width <= this.bounds.x + this.bounds.width
-    ) {
-      this.animation = gsap.to(this.paddle, {
-        x: this.paddle.x - 0.01,
-        duration: 0.02,
-        onComplete: this.moveLeft.bind(this),
-      });
-    }
-  }
-  moveRight() {
-    const newX = this.paddle.x + 0.01;
-    if (
-      newX >= this.bounds.x &&
-      newX + this.gap + this.paddle.width <= this.bounds.x + this.bounds.width
-    ) {
-      this.animation = gsap.to(this.paddle, {
-        x: this.paddle.x + 0.01,
-        duration: 0.02,
-        onComplete: this.moveRight.bind(this),
-      });
-    }
-  }
-  stop() {
-    gsap.killTweensOf(this.paddle);
+    dac.stream(scene);
   }
 }

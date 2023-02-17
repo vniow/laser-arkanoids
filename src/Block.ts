@@ -1,10 +1,22 @@
-import { Rect } from '@laser-dac/draw';
+import { Rect } from './laser-dac/draw/src';
 import { BasicColors } from './constants';
-import { Bounds } from './Bounds';
+
+interface BloockOptions {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: [number, number, number];
+  value: number;
+}
 
 export class Block extends Rect {
-  value: number = 0;
-  hit: boolean = false;
+  value: number;
+
+  constructor(options: BloockOptions) {
+    super(options);
+    this.value = options.value;
+  }
 
   updateColor() {
     this.color = Block.getColorForValue(this.value);
@@ -21,43 +33,5 @@ export class Block extends Rect {
 
   static getColorForValue(value: number) {
     return this.colorMap.get(value) || BasicColors.WHITE;
-  }
-
-  static createBlocks(
-    grid: number[][],
-    gap: number,
-    blockWidth: number,
-    blockHeight: number,
-    bounds: Bounds
-  ): Block[] {
-    // blockX keeps the array centred no matter how many you have
-    const blockX =
-      bounds.width / 2 -
-      (grid[0].length * (blockWidth + gap)) / 2 +
-      bounds.x +
-      gap / 2;
-    const blocks: Block[] = [];
-    let y = 0.05 + bounds.y;
-    let x = blockX;
-
-    for (let i = 0; i < grid.length; i++) {
-      for (let j = 0; j < grid[i].length; j++) {
-        if (grid[i][j] !== 0) {
-          const block = new Block({
-            width: blockWidth,
-            height: blockHeight,
-            x,
-            y,
-            color: this.getColorForValue(grid[i][j]),
-          });
-          block.value = grid[i][j];
-          blocks.push(block);
-        }
-        x += blockWidth + gap;
-      }
-      x = blockX;
-      y += blockHeight + gap;
-    }
-    return blocks;
   }
 }

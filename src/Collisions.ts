@@ -1,4 +1,3 @@
-import { gsap } from 'gsap';
 import { Ball } from './Ball';
 import { Bounds } from './Bounds';
 import { Block } from './Block';
@@ -12,30 +11,30 @@ export class Collisions {
     blocks: Block[]
   ) {
     // check if the ball hits the bounds
-    if (
-      ball.x - ball.radius <= bounds.x ||
-      ball.x + ball.radius >= bounds.x + bounds.width
-    ) {
-      ball.vx *= -1;
-      gsap.to(ball, { duration: 0.1, x: ball.x + ball.vx });
-    }
-    if (ball.y - ball.radius <= bounds.y) {
-      ball.vy *= -1;
-    }
+    // if (
+    //   ball.x - ball.radius <= bounds.x ||
+    //   ball.x + ball.radius >= bounds.x + bounds.width
+    // ) {
+    //   ball.vx *= -1;
+    // }
+    // if (ball.y - ball.radius <= bounds.y) {
+    //   ball.vy *= -1;
+    // }
 
     // reverse the y direction if the ball hits the paddle
-    if (
-      ball.x + ball.radius >= paddle.x - 0.05 &&
-      ball.x - ball.radius <= paddle.x + paddle.width + 0.05 &&
-      ball.y - ball.radius <= paddle.y + paddle.height &&
-      ball.y + ball.radius >= paddle.y
-    ) {
-      ball.vy *= -1;
-    }
+    // if (
+    //   ball.x + ball.radius >= paddle.x - 0.05 &&
+    //   ball.x - ball.radius <= paddle.x + paddle.width + 0.05 &&
+    //   ball.y - ball.radius <= paddle.y + paddle.height &&
+    //   ball.y + ball.radius >= paddle.y
+    // ) {
+    //   ball.vy *= -1;
+    // }
 
     // reverse the x and y directions if the ball hits any of the blocks
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
+      if (!block) continue; // skip null or undefined blocks
       if (
         ball.x + ball.radius > block.x &&
         ball.x - ball.radius < block.x + block.width &&
@@ -57,9 +56,7 @@ export class Collisions {
 
         block.value--;
         block.updateColor();
-        if (block.value === 0) {
-          blocks.splice(i, 1);
-        }
+        console.log(block.value);
         break;
       }
     }

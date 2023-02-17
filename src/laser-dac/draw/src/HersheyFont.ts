@@ -21,7 +21,7 @@ interface HersheyFontOptions {
 }
 
 // Render text using hershey font
-export class HersheyFont implements Shape {
+export class HersheyFont extends Shape {
   font: HersheyCharacter[];
   charWidth: number;
   spacingFactor: number;
@@ -31,6 +31,7 @@ export class HersheyFont implements Shape {
   color: Color;
 
   constructor(options: HersheyFontOptions) {
+    super();
     this.x = options.x;
     this.y = options.y;
     this.font = options.font;

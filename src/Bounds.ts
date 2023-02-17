@@ -1,6 +1,4 @@
-import { Line } from '@laser-dac/draw';
-import { Shape } from '@laser-dac/draw/dist/Shape';
-import { Color } from '@laser-dac/draw/dist/Point';
+import { Line, Shape, Color } from './laser-dac/draw/src';
 
 // this more or less recreates the Rect class from @laser-dac/draw
 // minus the bottom line
@@ -29,14 +27,14 @@ export class Bounds extends Shape {
     this.color = options.color;
   }
 
-  static bounds: Bounds | null = null;
+  // static bounds: Bounds | null = null;
 
-  static createBounds(options: BoundsOptions): Bounds {
-    if (!this.bounds) {
-      this.bounds = new Bounds(options);
-    }
-    return this.bounds;
-  }
+  // static createBounds(options: BoundsOptions): Bounds {
+  //   if (!this.bounds) {
+  //     this.bounds = new Bounds(options);
+  //   }
+  //   return this.bounds;
+  // }
 
   draw(resolution: number) {
     return [

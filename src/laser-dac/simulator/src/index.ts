@@ -1,5 +1,6 @@
 import { Server as WebSocketServer } from 'ws';
-import { Point, Device, Scene } from '@laser-dac/core';
+import { Device, Scene, Point } from './../../core/src';
+
 import { throttle } from './helpers';
 import express from 'express';
 import * as path from 'path';
@@ -42,6 +43,8 @@ export class Simulator extends Device {
           } else if (data.type === 'KEYRELEASE') {
             // emit the keyrelease event to the server
             this.events.emit('KEYRELEASE', data.data);
+          } else {
+            console.log('unknown message', data);
           }
         });
       });

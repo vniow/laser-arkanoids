@@ -1,8 +1,5 @@
-import { Line } from '@laser-dac/draw';
 import { Bounds } from './Bounds';
-import { Shape } from '@laser-dac/draw/dist/Shape';
-import { Color } from '@laser-dac/draw/dist/Point';
-import { Arc } from './arc';
+import { Arc, Color, Shape, Line } from './laser-dac/draw/src';
 
 interface PaddleOptions {
   x: number;
@@ -29,15 +26,6 @@ export class Paddle extends Shape {
     this.height = options.height;
     this.color = options.color;
     this.speed = options.speed;
-  }
-
-  static paddle: Paddle | null = null;
-
-  static createPaddle(options: PaddleOptions): Paddle {
-    if (!this.paddle) {
-      this.paddle = new Paddle(options);
-    }
-    return this.paddle;
   }
 
   draw(resolution: number) {

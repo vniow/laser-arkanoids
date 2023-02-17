@@ -33,7 +33,7 @@ let lastRenderTime;
 
 // add an event listener to the canvas that listens for a keydown event
 
-document.addEventListener('keydown', function (event) {
+canvas.addEventListener('keydown', function (event) {
   const key = event.key;
   try {
     let data;
@@ -53,13 +53,6 @@ document.addEventListener('keydown', function (event) {
       case ' ':
         data = { type: 'KEYDOWN', data: 'Space' };
         break;
-      // default:
-      //   if (key.length === 1 && /^[a-zA-Z]$/.test(key)) {
-      //     data = { type: 'KEYDOWN', data: key };
-      //   } else {
-      //     console.error(`Error: only letters are allowed. Got: ${key}`);
-      //     return;
-      //   }
     }
     ws.send(JSON.stringify(data));
   } catch (err) {
@@ -67,7 +60,7 @@ document.addEventListener('keydown', function (event) {
   }
 });
 
-document.addEventListener('keyup', function (event) {
+canvas.addEventListener('keyup', function (event) {
   try {
     let data;
     switch (event.key) {

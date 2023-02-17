@@ -1,4 +1,4 @@
-import { Color } from '@laser-dac/draw/dist/Point';
+import { Color } from './laser-dac/draw/src';
 export class BasicColors {
   static WHITE: Color = [1, 1, 1];
   static BLACK: Color = [0, 0, 0];
