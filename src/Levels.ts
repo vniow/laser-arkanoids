@@ -1,137 +1,96 @@
-import { DAC } from './laser-dac/core/src';
-import { Simulator } from './laser-dac/simulator/src';
-import { Scene } from './laser-dac/draw/src';
 import { Block } from './Block';
 import { Ball } from './Ball';
 import { Bounds } from './Bounds';
 import { Paddle } from './Paddle';
+import { HersheyFont, loadHersheyFont } from './laser-dac/draw/src';
+import path from 'path';
 
-// about the laser-dac library:
-// you can access the simulator at http://localhost:8080
-// it draws within a square canvas
-// all values are in percentages
-// so any x and y values could be 0, 0.5, 0.000314, 1, etc.
-// each object is a collection of points with an x, y, r, g, b value
+const font = loadHersheyFont(path.resolve(__dirname, './futural.jhf'));
 
 // define the bounds
-const BOUNDS_WIDTH = 0.1;
-const BOUNDS_HEIGHT = 0.1;
+
+const BOUNDS_WIDTH = 0.3;
+const BOUNDS_HEIGHT = 0.25;
 
 // define the blocks
-const BLOCK_WIDTH = BOUNDS_WIDTH / 10;
+const BLOCK_WIDTH = BOUNDS_WIDTH / 12;
 const BLOCK_HEIGHT = BLOCK_WIDTH / 2;
 const BLOCK_GAP = BLOCK_WIDTH / 10;
 
 // define the ball
 const BALL_RADIUS = BLOCK_HEIGHT / 2;
+const BALL_SPEED = 0.005;
 
 // define the grid
-// you can fit 7 blocks across with the default parameters
-// the numbers represent the colours of the blocks
-// 0 draws a blank block
 
-const grid = [[4, 3, 2, 1, 3, 1, 2]];
+interface LevelOptions {
+  grid: number[][];
+}
 
 export class Level {
-  objects: (Ball | Bounds | Paddle | Block)[] = [];
   grid: number[][];
+  objects: (Ball | Bounds | Paddle | HersheyFont | Block)[] = [];
+  bounds: Bounds;
   blocks: Block[] = [];
+  ball: Ball;
+  paddle: Paddle;
+  gameOverText: HersheyFont;
 
-  constructor() {
-    this.grid = grid;
-    this.start();
-  }
+  constructor(options: LevelOptions) {
+    this.grid = options.grid;
 
-  async start() {
-    const dac = new DAC();
-    dac.use(new Simulator());
-    // if (process.env.DEVICE) {
-    //   dac.use(new EtherDream());
-    // }
-    await dac.start();
+    // define the bounds
 
-    const scene = new Scene({ resolution: 500 });
-
-    const bounds = new Bounds({
+    this.bounds = new Bounds({
       x: (1 - BOUNDS_WIDTH) / 2,
       y: (1 - BOUNDS_HEIGHT) / 2,
       width: BOUNDS_WIDTH,
       height: BOUNDS_HEIGHT,
       color: [Math.random(), Math.random(), Math.random()],
     });
-    this.objects.push(bounds);
+    this.objects.push(this.bounds);
 
-    const checkCollision = (
-      ball: Ball,
-      bounds: Bounds,
-      paddle: Paddle,
-      blocks: Block[]
-    ) => {
-      // check if the ball hits the bounds
-      if (
-        ball.x - ball.radius <= bounds.x ||
-        ball.x + ball.radius >= bounds.x + bounds.width
-      ) {
-        ball.vx *= -1;
-      }
-      if (ball.y - ball.radius <= bounds.y) {
-        ball.vy *= -1;
-      }
-      // reverse the y direction if the ball hits the paddle
-      if (
-        ball.x + ball.radius >= paddle.x - BLOCK_GAP &&
-        ball.x - ball.radius <= paddle.x + paddle.width + BLOCK_GAP &&
-        ball.y - ball.radius <= paddle.y + paddle.height &&
-        ball.y + ball.radius >= paddle.y
-      ) {
-        ball.vy *= -1;
-      }
+    this.ball = new Ball({
+      x: this.bounds.x + this.bounds.width / 2,
+      y: this.bounds.y + this.bounds.height / 2,
+      radius: BALL_RADIUS,
+      color: [1, 1, 1],
+      speed: BALL_SPEED,
+    });
+    this.objects.push(this.ball);
 
-      // detect collision with blocks
-      for (let i = 0; i < blocks.length; i++) {
-        let block = blocks[i];
-        if (
-          ball.x + ball.radius >= block.x &&
-          ball.x - ball.radius <= block.x + block.width &&
-          ball.y + ball.radius >= block.y &&
-          ball.y - ball.radius <= block.y + block.height
-        ) {
-          if (
-            ball.x + ball.radius >= block.x + block.width ||
-            ball.x - ball.radius <= block.x
-          ) {
-            ball.vx *= -1;
-          }
-          if (
-            ball.y + ball.radius >= block.y + block.height ||
-            ball.y - ball.radius <= block.y
-          ) {
-            ball.vy *= -1;
-          }
-          // update block color
+    // draw the paddle
+    this.paddle = new Paddle({
+      x: this.bounds.x + BLOCK_GAP * 2,
+      y: this.bounds.y + this.bounds.height - BLOCK_HEIGHT,
+      width: BLOCK_WIDTH * 3,
+      height: BLOCK_HEIGHT / 2,
+      color: [1, 1, 1],
+    });
+    this.objects.push(this.paddle);
 
-          // remove block if value is zero
+    this.gameOverText = new HersheyFont({
+      font,
+      text: 'game over',
+      x: this.bounds.x,
+      y: this.bounds.y + BOUNDS_HEIGHT / 2,
+      color: [1, 1, 1],
+      charWidth: 0.01,
+    });
 
-          block.value--;
-          block.color = Block.getColorForValue(block.value);
-          // remove block if value is zero
-          if (block.value === 0) {
-            blocks.splice(i, 1);
-            this.objects.splice(this.objects.indexOf(block), 1); // remove from objects array as well
+    this.checkCollision();
+    this.createBlocks();
+  }
 
-            i--; // to account for the index change due to splice
-          }
-        }
-      }
-    };
-
-    for (let i = 0; i < grid.length; i++) {
+  private createBlocks() {
+    for (let i = 0; i < this.grid.length; i++) {
       const totalLength =
-        grid[i].length * BLOCK_WIDTH + (grid[i].length - 1) * BLOCK_GAP;
+        this.grid[i].length * BLOCK_WIDTH +
+        (this.grid[i].length - 1) * BLOCK_GAP;
       const startX = (1 - BOUNDS_WIDTH) / 2 + (BOUNDS_WIDTH - totalLength) / 2;
-      const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP;
-      for (let j = 0; j < grid[i].length; j++) {
-        if (grid[i][j] > 0) {
+      const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP * 5;
+      for (let j = 0; j < this.grid[i].length; j++) {
+        if (this.grid[i][j] > 0) {
           const x = startX + j * (BLOCK_WIDTH + BLOCK_GAP);
           const y = startY + i * (BLOCK_HEIGHT + BLOCK_GAP);
           const block = new Block({
@@ -139,8 +98,8 @@ export class Level {
             height: BLOCK_HEIGHT,
             x,
             y,
-            value: grid[i][j],
-            color: Block.getColorForValue(grid[i][j]),
+            value: this.grid[i][j],
+            color: Block.getColorForValue(this.grid[i][j]),
           });
 
           this.blocks.push(block);
@@ -148,51 +107,120 @@ export class Level {
         }
       }
     }
+  }
 
-    // the ball will start a BLOCK_GAP distance from the bottom of the grid
-    const totalBlocksHeight =
-      grid.length * (BLOCK_HEIGHT + BLOCK_GAP) - BLOCK_GAP;
-    const startY = (1 - BOUNDS_HEIGHT) / 2 + BLOCK_GAP + totalBlocksHeight;
-    // draw the ball
-    const ball = new Ball({
-      x:
-        Math.random() * (bounds.x + (bounds.width - BLOCK_GAP) / 2 - bounds.x) +
-        bounds.x +
-        BLOCK_GAP,
-      y: startY + BALL_RADIUS + BLOCK_GAP,
-      radius: BALL_RADIUS,
-      color: [1, 1, 1],
-    });
-    this.objects.push(ball);
+  checkCollision() {
+    // check if the ball hits the bounds
+    if (
+      this.ball.x - this.ball.radius <= this.bounds.x ||
+      this.ball.x + this.ball.radius >= this.bounds.x + this.bounds.width
+    ) {
+      this.ball.vx *= -1;
+    }
+    if (this.ball.y - this.ball.radius <= this.bounds.y) {
+      this.ball.vy *= -1;
+    }
+    // reverse the y direction if the ball hits the paddle
+    if (
+      this.ball.x + this.ball.radius >= this.paddle.x - BLOCK_GAP &&
+      this.ball.x - this.ball.radius <=
+        this.paddle.x + this.paddle.width + BLOCK_GAP &&
+      this.ball.y - this.ball.radius <= this.paddle.y + this.paddle.height &&
+      this.ball.y + this.ball.radius >= this.paddle.y
+    ) {
+      this.ball.vy *= -1;
+      console.log('hit paddle');
+    }
 
-    // draw the paddle
-    const paddle = new Paddle({
-      x: bounds.x + BLOCK_GAP * 2,
-      y: bounds.y + BOUNDS_HEIGHT - BLOCK_GAP * 10,
-      width: BLOCK_WIDTH * 8,
-      height: BLOCK_GAP * 2,
-      color: [1, 1, 1],
-      speed: 0.01,
-    });
-    this.objects.push(paddle);
+    // detect collision with blocks
+    for (let i = 0; i < this.blocks.length; i++) {
+      let block = this.blocks[i];
+      if (
+        this.ball.x + this.ball.radius >= block.x &&
+        this.ball.x - this.ball.radius <= block.x + block.width &&
+        this.ball.y + this.ball.radius >= block.y &&
+        this.ball.y - this.ball.radius <= block.y + block.height
+      ) {
+        if (
+          this.ball.x + this.ball.radius >= block.x + block.width ||
+          this.ball.x - this.ball.radius <= block.x
+        ) {
+          this.ball.vx *= -1;
+        }
+        if (
+          this.ball.y + this.ball.radius >= block.y + block.height ||
+          this.ball.y - this.ball.radius <= block.y
+        ) {
+          this.ball.vy *= -1;
+        }
 
-    const self = this;
-    function renderLevel(objects: (Ball | Bounds | Paddle | Block)[]) {
-      checkCollision(ball, bounds, paddle, self.blocks);
-      for (const object of objects) {
-        scene.add(object);
-        if (object instanceof Ball) {
-          object.moveBall();
-          // object.checkCollision(bounds, paddle);
+        // update block color when hit
+        block.value--;
+        block.color = Block.getColorForValue(block.value);
+        if (block.value === 0) {
+          this.blocks.splice(i, 1); // remove from blocks array
+          this.objects.splice(this.objects.indexOf(block), 1); // remove from objects array as well
+
+          i--; // to account for the index change due to splice
         }
       }
     }
+  }
 
-    scene.start(() => {
-      // scene.reset();
-      renderLevel(this.objects);
+  gameOver = () => {
+    if (
+      this.ball.y + this.ball.radius >= this.bounds.y + this.bounds.height ||
+      this.blocks.length === 0
+    ) {
+      this.objects = [];
+      this.blocks = [];
+      this.objects.push(this.gameOverText);
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  reset() {
+    console.log('resetting game');
+    // remove game over text
+    this.objects.splice(this.objects.indexOf(this.gameOverText), 1);
+
+    // reset bounds
+    this.bounds = new Bounds({
+      x: (1 - BOUNDS_WIDTH) / 2,
+      y: (1 - BOUNDS_HEIGHT) / 2,
+      width: BOUNDS_WIDTH,
+      height: BOUNDS_HEIGHT,
+      color: [Math.random(), Math.random(), Math.random()],
     });
+    this.objects.push(this.bounds);
 
-    dac.stream(scene);
+    // reset ball
+    this.ball = new Ball({
+      x: this.bounds.x + this.bounds.width / 2,
+      y: this.bounds.y + this.bounds.height / 2,
+      radius: BALL_RADIUS,
+      color: [1, 1, 1],
+      speed: BALL_SPEED,
+    });
+    this.objects.push(this.ball);
+
+    // reset paddle
+    this.paddle = new Paddle({
+      x: this.bounds.x + BLOCK_GAP * 2,
+      y: this.bounds.y + this.bounds.height - BLOCK_HEIGHT,
+      width: BLOCK_WIDTH * 3,
+      height: BLOCK_HEIGHT / 2,
+      color: [1, 1, 1],
+    });
+    this.objects.push(this.paddle);
+
+    // reset blocks
+    // this.blocks = [];
+    this.createBlocks();
+
+    // reset collisions
+    this.checkCollision();
   }
 }

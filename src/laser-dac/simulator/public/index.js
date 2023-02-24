@@ -31,9 +31,9 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let lastRenderTime;
 
-// add an event listener to the canvas that listens for a keydown event
+// add an event listener to the document that listens for a keydown event
 
-canvas.addEventListener('keydown', function (event) {
+document.addEventListener('keydown', function (event) {
   const key = event.key;
   try {
     let data;
@@ -60,7 +60,7 @@ canvas.addEventListener('keydown', function (event) {
   }
 });
 
-canvas.addEventListener('keyup', function (event) {
+document.addEventListener('keyup', function (event) {
   try {
     let data;
     switch (event.key) {

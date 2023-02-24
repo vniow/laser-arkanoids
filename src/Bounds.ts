@@ -38,13 +38,14 @@ export class Bounds extends Shape {
 
   draw(resolution: number) {
     return [
-      ...new Line({
-        from: { x: this.x, y: this.y + this.height },
-        to: { x: this.x, y: this.y },
-        color: this.color,
-        blankBefore: true,
-        blankAfter: true,
-      }).draw(resolution),
+      // left
+      // ...new Line({
+      //   from: { x: this.x, y: this.y + this.height },
+      //   to: { x: this.x, y: this.y },
+      //   color: this.color,
+      //   blankBefore: true,
+      //   blankAfter: true,
+      // }).draw(resolution),
       // top
       ...new Line({
         from: { x: this.x, y: this.y },
@@ -54,13 +55,13 @@ export class Bounds extends Shape {
         blankBefore: true,
       }).draw(resolution),
       // right
-      ...new Line({
-        from: { x: this.x + this.width, y: this.y },
-        to: { x: this.x + this.width, y: this.y + this.height },
-        color: this.color,
-        blankAfter: true,
-        blankBefore: true,
-      }).draw(resolution),
+      // ...new Line({
+      //   from: { x: this.x + this.width, y: this.y },
+      //   to: { x: this.x + this.width, y: this.y + this.height },
+      //   color: this.color,
+      //   blankAfter: true,
+      //   blankBefore: true,
+      // }).draw(resolution),
     ];
   }
 }
