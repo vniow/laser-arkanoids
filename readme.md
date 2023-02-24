@@ -24,4 +24,6 @@ You should be seeing something like this in the centre of the screen:
 
 ![screenshot](laser-arkanoids.gif)
 
+Use the arrow keys to move the paddle and hit the spacebar to reset the game.
+
 Enjoy.
