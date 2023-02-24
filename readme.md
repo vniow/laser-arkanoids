@@ -12,7 +12,7 @@ I've been tecahing myself programming using the
 0. Ensure you've got `node` and `npm` set up. I'm using node v18 LTS and npm 8.15.
 1. Clone the repo
 
-- optional: add your laser DAC in Levels.ts
+- optional: add your laser DAC in index.ts
 
 2. `cd` to `/src`
 3. Run `npm i`
@@ -20,7 +20,7 @@ I've been tecahing myself programming using the
 5. Run `npm run dev`
 6. Visit http://localhost:8080 in your fav browser
 
-You should be seeing something like this:
+You should be seeing something like this in the centre of the screen:
 
 ![screenshot](laser-arkanoids.gif)
 
