@@ -29,6 +29,7 @@ export class Simulator extends Device {
       this.server = http.createServer();
       const app = express();
       app.use(express.static(path.join(__dirname, '..', 'public')));
+
       this.wss = new WebSocketServer({ server: this.server });
 
       this.server.on('request', app);
@@ -36,15 +37,19 @@ export class Simulator extends Device {
       this.wss.on('connection', (ws) => {
         // listen for the 'message' event from the server connection
         ws.on('message', (message: Buffer) => {
-          const data = JSON.parse(message.toString());
-          if (data.type === 'KEYDOWN') {
-            // emit the keypress event to the server
-            this.events.emit('KEYDOWN', data.data);
-          } else if (data.type === 'KEYRELEASE') {
-            // emit the keyrelease event to the server
-            this.events.emit('KEYRELEASE', data.data);
-          } else {
-            console.log('unknown message', data);
+          try {
+            const data = JSON.parse(message.toString());
+            if (data.type === 'KEYDOWN') {
+              // emit the keypress event to the server
+              this.events.emit('KEYDOWN', data.data);
+            } else if (data.type === 'KEYRELEASE') {
+              // emit the keyrelease event to the server
+              this.events.emit('KEYRELEASE', data.data);
+            } else {
+              console.log('nope', data);
+            }
+          } catch (e) {
+            console.log('invalid input');
           }
         });
       });

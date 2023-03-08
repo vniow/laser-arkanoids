@@ -35,6 +35,7 @@
     "animejs": "^3.2.1",
     "easejs": "^0.2.9",
     "express": "^4.18.2",
+    "gitk": "^0.47.0",
     "gsap": "^3.11.4",
     "input-event": "^1.2.6",
     "keypress.js": "^2.1.5",

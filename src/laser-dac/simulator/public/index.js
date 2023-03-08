@@ -9,8 +9,8 @@ class SimulatorOptions {
     this.numberOfPoints = '';
     this.totalPoints = '';
     this.showBlanking = false;
-    this.showDots = true;
-    this.forceTotalRender = true;
+    this.showDots = false;
+    this.forceTotalRender = false;
   }
 }
 
