@@ -1,9 +1,12 @@
 import { Server as WebSocketServer } from 'ws';
-import { Point, Device, Scene } from '@laser-dac/core';
+import { Device, Scene, Point } from './../../core/src';
 
+import { throttle } from './helpers';
 import express from 'express';
 import * as path from 'path';
 import * as http from 'http';
+// import the Node events module that will send data from the client to the server
+import { EventEmitter } from 'events';
 
 // When there is no real device, we fake an interval.
 // We've measured how fast the real device streams, which was 4ms.
@@ -18,27 +21,36 @@ export class Simulator extends Device {
   server?: http.Server;
   wss?: WebSocketServer;
   interval?: NodeJS.Timer;
+  // create a new instance of the events module
+  events = new EventEmitter();
 
   start(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.server = http.createServer();
       const app = express();
-      app.use(express.static(path.join(__dirname, '..', 'public')));
+      app.use(express.static(path.join(__dirname, './../../../../', 'public')));
       this.wss = new WebSocketServer({ server: this.server });
 
       this.server.on('request', app);
 
       this.wss.on('connection', (ws) => {
+        // listen for the 'message' event from the server connection
         ws.on('message', (message: Buffer) => {
           const data = JSON.parse(message.toString());
-          if (data.type === 'CLICK') {
-            console.log('CLICK', data.data);
+          if (data.type === 'KEYDOWN') {
+            // emit the keypress event to the server
+            this.events.emit('KEYDOWN', data.data);
+          } else if (data.type === 'KEYRELEASE') {
+            // emit the keyrelease event to the server
+            this.events.emit('KEYRELEASE', data.data);
+          } else {
+            console.log('unknown message', data);
           }
         });
       });
 
       this.server.listen(PORT, function () {
-        console.log(`Started BUTTS on http://localhost:${PORT}`);
+        console.log(`started laser simulator on http://localhost:${PORT}`);
         resolve(true);
       });
     });
@@ -73,7 +85,7 @@ export class Simulator extends Device {
         }
         // get another frame if we need to...
         setTimeout(innerStream.bind(self, numpoints, pointcallback), 0);
-        // self.sendPointInfoToSimulator(numpoints, points.length);
+        self.sendPointInfoToSimulator(numpoints, points.length);
       } else {
         const points = frameBuffer.splice(0, numpoints);
         pointcallback(points);
@@ -83,6 +95,7 @@ export class Simulator extends Device {
     this.interval = setInterval(() => {
       innerStream(REQUESTED_POINTS_COUNT, (streamPoints) => {
         this.sendPointsToSimulator(streamPoints);
+        console.log('points');
       });
     }, STREAM_INTERVAL);
   }
@@ -100,13 +113,13 @@ export class Simulator extends Device {
   }
 
   // This method is called soo often, so throttle it!
-  //   private sendPointInfoToSimulator = throttle(
-  //     (numpoints: number, totalPoints: number) => {
-  //       this.sendToSimulator({
-  //         type: 'POINTS_INFO',
-  //         data: { numpoints, totalPoints },
-  //       });
-  //     },
-  //     400
-  //   );
+  private sendPointInfoToSimulator = throttle(
+    (numpoints: number, totalPoints: number) => {
+      this.sendToSimulator({
+        type: 'POINTS_INFO',
+        data: { numpoints, totalPoints },
+      });
+    },
+    400
+  );
 }

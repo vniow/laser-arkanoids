@@ -28,7 +28,7 @@ export class Simulator extends Device {
     return new Promise((resolve, reject) => {
       this.server = http.createServer();
       const app = express();
-      app.use(express.static(path.join(__dirname, '..', 'public')));
+      app.use(express.static(path.join(__dirname, './../../../../', 'public')));
       this.wss = new WebSocketServer({ server: this.server });
 
       this.server.on('request', app);

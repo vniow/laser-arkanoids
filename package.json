@@ -10,10 +10,10 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx tsc -d",
+    "build": "npx tsc -b -v",
     "start": "node ./dist/index.js",
     "dist": "tsc -p .",
-    "dev": "nodemon ./src/index.ts",
+    "dev": "npx tsc -d && nodemon ./src/index.ts",
     "type": "module"
   },
   "author": "",
