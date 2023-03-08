@@ -33,8 +33,8 @@ export class Line extends Shape {
     this.from = options.from;
     this.to = options.to;
     this.color = options.color;
-    this.blankBefore = options.blankBefore || true;
-    this.blankAfter = options.blankAfter || true;
+    this.blankBefore = options.blankBefore || false;
+    this.blankAfter = options.blankAfter || false;
 
     this.waitAmount = options.waitAmount || MAX_WAIT_AMOUNT;
     this.blankingAmount = options.blankingAmount || BLANKING_AMOUNT;
